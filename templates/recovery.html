@@ -1,0 +1,50 @@
+{{ define "recovery" }}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная страница</title>
+    <link rel="shortcut icon" href="/static/css/password_64px.png" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" 
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/css/style_regist.css">
+</head>
+<body>
+    <header>
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="container">
+                  <div class="col-xs-3">
+                  </div>
+              <img class="navbar-brand col-xs-auto" width="50px" src="/static/css/password_64px.png" alt="Logo">
+              <button class="navbar-toggler col-xs-3" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon"></span>
+              </button>
+              <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                  <div class="navbar-nav" style="padding-left: 10px;">
+                      <a class="nav-link" aria-current="page" href="/">Главная</a>
+                      <a class="nav-link" href="/create">Регистрация</a>
+                      <a class="nav-link" href="/login">Вход</a>
+                  </div>
+              </div>
+          </div>
+      </nav>
+    </header><br>
+    <main role="main">
+        <div class="form">
+            <form class="form_body" action="/recovery_now" method="post">
+                <h1 class="form_title">Восстановление пароля</h1>
+                <div class="form_item">
+                    <label class="form_label">Введите логин или адрес почты:</label>
+                    <input class="form_input" type="text" name="rec_ac" id="rec_ac" placeholder="Fedor_02 or example@gmail.com"><br>
+                </div>
+                <button class="form_button">Продолжить</button>
+            </form>
+        </div>
+    </main>
+
+{{ template "foot" }}
+
+{{end}}

@@ -1,0 +1,58 @@
+{{ define "update"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" 
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="shortcut icon" href="/static/css/update_left_rotation_48px.png" type="image/png">
+</head>
+<body>
+    <main class="row justify-content-md-center">    
+        <h2 class="col-lg-9 col-md-10">Cписок зарегистрированных пользователей <img src="/static/css/user_48px.png" width="50px" alt=""></h2><br><br>
+        <div class="col-lg-9 col-md-10">
+            <table class="table table-striped table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Surname</th>
+                        <th>Login</th>
+                        <th>Email</th>
+                        <th>Password</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range . }}
+                    <tr>
+                        <td>{{ .Id }}</td>
+                        <td>{{ .User_name }}</td>
+                        <td>{{ .User_surname }}</td>
+                        <td>{{ .Login }}</td>
+                        <td>{{ .Email }}</td>
+                        <td>{{ .Password }}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table><br>
+            <form class="row" action="/funUpdate" method="post">
+                <div class="col col-lg-2 col-md-4 col-sm-8 col-xs-12">
+                    <span>Введите логин:</span>
+                </div>
+                <div class="col-md-7 col-md-5" style="margin-bottom: 5px;">
+                    <input class="form-control me-2" name="update_input" id="update_input" placeholder="Fedor_02" type="text">
+                </div>
+                <div class="col col-lg-3 col-md-3 col-sm-9 col-xs-12">
+                    <button class="btn btn-outline-primary" type="submit">Обновить</button>
+                </div>
+            </form>
+            <a href="/admin" class="btn btn-primary btn-sm">Назад</a>
+        </div>
+    </main>
+    
+{{ template "foot" }}
+
+{{end}}

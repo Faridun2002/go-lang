@@ -1,0 +1,44 @@
+{{ define "update_user"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обновить данные</title>
+    <link rel="stylesheet" href="/static/css/style_regist.css">
+    <link rel="shortcut icon" href="/static/css/update_left_rotation_48px.png" type="image/png">
+</head>
+<body>
+    <div class="form">
+        <form class="form_body" action="/funUpdateUser" method="post">
+            <h1 class="form_title">Обновление</h1>
+            {{ range . }}
+            <div class="form_item">
+                <label class="form_label">Введите имя:</label>
+                <input class="form_input" value="{{ .User_name }}" type="text" name="name_user_update" id="name_user_update" placeholder="Fedor">
+            </div>
+            <div class="form_item">
+                <label class="form_label">Введите фамилию:</label>
+                <input class="form_input" value="{{ .User_surname }}" type="text" name="surname_user_update" id="surname_user_update" placeholder="Fedorov">
+            </div>
+            <div class="form_item">
+                <label class="form_label">Введите логин:</label>
+                <input class="form_input" value="{{ .Login }}" type="text" name="login_user_update" id="login_user_update" placeholder="Fedor_02">
+            </div>
+            <div class="form_item">
+                <label class="form_label">Введите адрес почты:</label>
+                <input class="form_input" value="{{ .Email }}" type="email" name="email_user_update" id="email_user_update" placeholder="example@gmail.com"><br>
+            </div>
+            <div class="form_item">
+                <label class="form_label">Введите пароль:</label>
+                <input class="form_input" value="{{ .Password }}" type="password" name="password_user_update" id="password_user_update" placeholder="abcd1234" minlength="8" maxlength="16"><br>
+            </div>
+            {{ end }}
+            <button class="form_button">Обновить</button>
+        </form>
+    </div>
+</body>
+</html>
+
+{{end}}
