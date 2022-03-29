@@ -1,0 +1,944 @@
+https://github.com/Faridun2002/go-lang.git адрес github
+
+Библиотеки для сессии 
+module regist
+
+go 1.17
+
+require github.com/go-sql-driver/mysql v1.6.0
+
+
+require (
+	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
+	github.com/gin-contrib/sse v0.1.0 // indirect
+	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19 // indirect
+	github.com/gin-gonic/gin v1.7.7 // indirect
+	github.com/go-playground/locales v0.14.0 // indirect
+	github.com/go-playground/universal-translator v0.18.0 // indirect
+	github.com/go-playground/validator/v10 v10.10.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/gorilla/context v1.1.1 // indirect
+	github.com/gorilla/securecookie v1.1.1 // indirect
+	github.com/gorilla/sessions v1.2.1 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/ugorji/go/codec v1.2.6 // indirect
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
+	golang.org/x/sys v0.0.0-20220224120231-95c6836cb0e7 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
+)
+
+//----------------------------------------------------------------------------------------------
+
+Функция отправки пароля подтверждение
+package main
+ 
+import (
+	"fmt"
+	gomail "gopkg.in/mail.v2"
+)
+
+func main() {
+	mail := gomail.NewMessage()
+	mail.SetHeader("From", "faridunjalolov1@gmail.com")
+	fmt.Sprintf(mail.SetHeader("To", "%s"), Email)
+	mail.SetHeader("Subject", "Пароль для подтверждение регистрации")
+	fmt.Sprintf(mail.SetHeader("text/plain", "Введите %s этот для пароль в окне верефикации"), User_name, Bytes)
+	
+	a := gomail.NewDialer("smtp.gmail.com",587,"faridunjalolov1@gmail.com","farn2212")
+
+	if err := a.DialAndSend(mail); err != nil {
+		fmt.Println()
+		panic(err)
+	}
+}
+
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"html/template"
+	"math/rand"
+	"net/http"
+	"strconv"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/golang/protobuf/ptypes/struct"
+	_ "github.com/gorilla/sessions"
+	"github.com/xuri/excelize/v2"
+	gomail "gopkg.in/mail.v2"
+	// "smtp"
+	// "go/types"
+)
+
+type User struct {
+	Id int16
+	User_name, User_surname, Login, Email, Password string
+}
+type Active_user struct {
+	Name string
+}
+type Ver_user struct {
+	Name string
+	Pass string
+}
+type Block_user struct {
+	Id int16
+	Login string
+}
+type Rec_user struct {
+	Login string
+	Email string
+	Pass string
+}
+
+var viv_user = []User{}
+var active_user = []Active_user{}
+var User_name string
+var User_surname string
+var Login string
+var Email string
+var Password string
+var Bytes int
+var Rec_ac string
+var user Rec_user
+var Input string
+var Block string 
+var Insert string 
+var Delete string
+var UpdateUserName string 
+var num int = 1
+var sNum string
+var randNum int
+var E string
+// var time_now time.Time
+
+func index(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/index.html", "templates/header.html")
+	if err != nil {
+		panic(err)
+	}
+	t.ExecuteTemplate(w, "index", nil)
+}
+
+func create(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/create.html")
+	if err != nil {
+		panic(err)
+	}
+	t.ExecuteTemplate(w, "create", nil)
+}
+
+func save_create(w http.ResponseWriter, r *http.Request) {
+	User_name = r.FormValue("user_name")
+	User_surname = r.FormValue("user_surname")
+	Login = r.FormValue("login")
+	Email = r.FormValue("email")
+	Password = r.FormValue("password")
+
+	rand.Seed(time.Now().UTC().UnixNano())
+	Bytes = rand.Intn(9999 - 1000)
+	if Bytes < 1000 {
+		Bytes += 1000
+	}
+
+	if User_name == "" || User_surname == "" || Login == "" || Email == "" || Password == "" {
+		fmt.Fprintf(w, "Не все данные заполнены")
+	} else {
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	search, err := db.Query(fmt.Sprintf("SELECT login, email FROM user WHERE login='%s' AND email='%s'", Login, Email))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user User
+	for search.Next() {
+		err = search.Scan(&user.Login, &user.Email)
+		if err != nil {
+			panic(err)
+		}
+	}
+	
+	if user.Login == Login || user.Email == Email {
+				fmt.Fprintf(w, "Пользователь с таким логином или почтой уже зарегистрирован")
+	} else {
+		insert_ver, err := db.Query(fmt.Sprintf("INSERT INTO verification (name, pass) VALUES('%s', '%d')", Login, Bytes))
+		if err != nil {
+		panic(err)
+		}
+		defer insert_ver.Close()
+		mail()
+		fmt.Println("Пароль отправлен на почту")
+		http.Redirect(w, r, "/verification", http.StatusSeeOther)
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	fmt.Println("Server is listing...")
+}
+}
+
+func mail() {
+	B := strconv.Itoa(Bytes)
+	mail := gomail.NewMessage()
+	mail.SetHeader("From", "faridunjalolov1@gmail.com")
+	mail.SetHeader("To", Email)
+	mail.SetHeader("Subject", "Пароль для подтверждения регистрации")
+	mail.SetBody("text/html", "Введите " + B + " этот пароль для подтверждение регистрации")
+	a := gomail.NewDialer("smtp.gmail.com",587,"faridunjalolov1@gmail.com","farn2212")
+	if err := a.DialAndSend(mail); err != nil {
+		fmt.Println()
+		panic(err)
+	}
+	fmt.Println(Bytes)
+}
+
+func verification(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/verification.html")
+	if err != nil {
+		panic(err)
+	}
+	t.ExecuteTemplate(w, "verification", nil)
+}
+
+func save_ver(w http.ResponseWriter, r *http.Request) {
+	Pass := r.FormValue("password3")
+
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	search, err := db.Query(fmt.Sprintf("SELECT name, pass FROM verification WHERE name='%s'", Login))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user Ver_user
+	for search.Next() {
+		err = search.Scan(&user.Name, &user.Pass)
+		if err != nil {
+			panic(err)
+		} 
+	}
+
+	if Login == user.Name && Pass == user.Pass {
+		http.Redirect(w, r, "/main_site", http.StatusSeeOther)
+		insert, err := db.Query(fmt.Sprintf("INSERT INTO user (name, surname, login, email, password) VALUES('%s', '%s', '%s', '%s', '%s')", User_name, User_surname, Login, Email, Password))
+		if err != nil {
+		panic(err)
+		}
+		defer insert.Close()
+		update, err := db.Query(fmt.Sprintf("UPDATE active_user SET name='%s' WHERE id=1", User_name))
+		if err != nil {
+			panic(err)
+		}
+		defer update.Close()
+		} else {
+		fmt.Println("Неверный пароль")
+	}
+
+	// http.Redirect(w, r, "/", http.StatusSeeOther)
+	fmt.Println("Server is listing...")
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/login.html")
+	if err != nil {
+		panic(err)
+	}
+	t.ExecuteTemplate(w, "login", nil)
+}
+
+func login_now(w http.ResponseWriter, r *http.Request) {
+	Login = r.FormValue("login2")
+	Password2 := r.FormValue("password2")
+	
+	if Login == "" || Password2 == "" {
+		fmt.Fprintf(w, "Логин или пароль не введён")
+	} else {
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	search, err := db.Query(fmt.Sprintf("SELECT id, name, login, password FROM user WHERE login='%s' AND password='%s'", Login, Password2))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user User
+	for search.Next() {
+		err = search.Scan(&user.Id ,&user.User_name, &user.Login, &user.Password)
+		if err != nil {
+			panic(err)
+		} 
+	}
+	fmt.Println(user)
+	
+	if Login == user.Login && Password2 == user.Password {
+		if user.Id < 0 {
+			fmt.Fprintf(w, "Ваш аккаунт заблокирован. Вы можете обратиться к администратору по электронной почте helpAdmin@gmail.com")
+			} else {
+			update, err := db.Query(fmt.Sprintf("UPDATE active_user SET name='%s' WHERE id=1", user.User_name))
+			if err != nil {
+				panic(err)
+			}
+			defer update.Close()
+			if Login == "Admin" {
+				http.Redirect(w, r, "/admin", http.StatusSeeOther)
+			} else {
+				http.Redirect(w, r, "/main_site", http.StatusSeeOther)
+			}
+		}
+		} else {
+			fmt.Fprintf(w, "Логин или пароль введён неверно")
+	}
+	// fmt.Println("Server is listing...")
+}
+}
+
+func admin(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/admin/index_admin.html")
+	if err != nil {
+		panic(err)
+	}
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	rows, err := db.Query("SELECT * FROM user WHERE id > 0 ORDER BY id")
+    if err != nil {
+        panic(err)
+    }
+    defer rows.Close()
+
+	viv_user = []User{}
+	
+	for rows.Next(){
+        var p = User{}
+        err := rows.Scan(&p.Id, &p.User_name, &p.User_surname, &p.Login, &p.Email, &p.Password)
+        if err != nil{
+            fmt.Println(err)
+            continue
+        }
+        viv_user = append(viv_user, p)
+    }
+
+	t.ExecuteTemplate(w, "admin", viv_user)
+}
+
+func block_user(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/admin/block_user.html")
+	if err != nil {
+		panic(err)
+	}
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	rows, err := db.Query("SELECT * FROM user WHERE id > 0 ORDER BY id")
+    if err != nil {
+        panic(err)
+    }
+    defer rows.Close()
+
+	viv_user = []User{}
+	
+	for rows.Next(){
+        var p = User{}
+        err := rows.Scan(&p.Id, &p.User_name, &p.User_surname, &p.Login, &p.Email, &p.Password)
+        if err != nil{
+            fmt.Println(err)
+            continue
+        }
+        viv_user = append(viv_user, p)
+    }
+
+	// fmt.Println(viv_user)
+	t.ExecuteTemplate(w, "block_user", viv_user)
+}
+
+func funBlock(w http.ResponseWriter, r *http.Request) {
+	Input = r.FormValue("block_input")
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	search, err := db.Query(fmt.Sprintf("SELECT id, login FROM user WHERE login='%s' AND id>0", Input))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user Block_user
+	for search.Next() {
+		err = search.Scan(&user.Id, &user.Login)
+		if err != nil {
+			panic(err)
+		} 
+	}
+
+	ID := -user.Id 
+	update, err := db.Query(fmt.Sprintf("UPDATE user SET id='%d' WHERE login='%s' AND id>0", ID, Input))
+		if err != nil {
+			panic(err)
+		}
+	defer update.Close()
+
+	fmt.Println(ID)
+
+	http.Redirect(w, r, "/block_user", http.StatusSeeOther)
+}
+
+func recovery_user(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/admin/recovery_user.html")
+	if err != nil {
+		panic(err)
+	}
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	rows, err := db.Query("SELECT * FROM user WHERE id < 0 ORDER BY id")
+    if err != nil {
+        panic(err)
+    }
+    defer rows.Close()
+
+	viv_user = []User{}
+	
+	for rows.Next(){
+        var p = User{}
+        err := rows.Scan(&p.Id, &p.User_name, &p.User_surname, &p.Login, &p.Email, &p.Password)
+        if err != nil{
+            fmt.Println(err)
+            continue
+        }
+        viv_user = append(viv_user, p)
+    }
+
+	// fmt.Println(viv_user)
+	t.ExecuteTemplate(w, "recovery_user", viv_user)
+}
+
+func funRecovery(w http.ResponseWriter, r *http.Request) {
+	Input = r.FormValue("recovery_input")
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	search, err := db.Query(fmt.Sprintf("SELECT id, login FROM user WHERE login='%s' AND id<0", Input))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user Block_user
+	for search.Next() {
+		err = search.Scan(&user.Id, &user.Login)
+		if err != nil {
+			panic(err)
+		} 
+	}
+
+	ID := -user.Id 
+	update, err := db.Query(fmt.Sprintf("UPDATE user SET id='%d' WHERE login='%s' AND id<0", ID, Input))
+		if err != nil {
+			panic(err)
+		}
+	defer update.Close()
+
+	fmt.Println(ID)
+
+	http.Redirect(w, r, "/recovery_user", http.StatusSeeOther)
+}
+
+func delete_user(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/admin/delete_user.html")
+	if err != nil {
+		panic(err)
+	}
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	rows, err := db.Query("SELECT * FROM user WHERE id!=0 ORDER BY id")
+    if err != nil {
+        panic(err)
+    }
+    defer rows.Close()
+
+	viv_user = []User{}
+	
+	for rows.Next(){
+        var p = User{}
+        err := rows.Scan(&p.Id, &p.User_name, &p.User_surname, &p.Login, &p.Email, &p.Password)
+        if err != nil{
+            fmt.Println(err)
+            continue
+        }
+        viv_user = append(viv_user, p)
+    }
+
+	// fmt.Println(viv_user)
+	t.ExecuteTemplate(w, "delete_user", viv_user)
+}
+
+func funDelete(w http.ResponseWriter, r *http.Request) {
+	Input = r.FormValue("delete_input")
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	search, err := db.Query(fmt.Sprintf("SELECT id, login FROM user WHERE login='%s' AND id!=0", Input))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user Block_user
+	for search.Next() {
+		err = search.Scan(&user.Id, &user.Login)
+		if err != nil {
+			panic(err)
+		} 
+	}
+
+	delete, err := db.Query(fmt.Sprintf("DELETE FROM user WHERE login='%s' AND id!=0", user.Login))
+		if err != nil {
+			panic(err)
+		}
+	defer delete.Close()
+
+	http.Redirect(w, r, "/delete_user", http.StatusSeeOther)
+}
+
+func insert_user(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/admin/insert_user.html")
+	if err != nil {
+		panic(err)
+	}
+	t.ExecuteTemplate(w, "insert_user", nil)
+}
+
+func funInsert(w http.ResponseWriter, r *http.Request) {
+	Name_user := r.FormValue("name_user")
+	Surname_user := r.FormValue("surname_user")
+	Login_user := r.FormValue("login_user")
+	Email_user := r.FormValue("email_user")
+	Password_user := r.FormValue("password_user")
+
+	if Name_user == "" || Surname_user == "" || Login_user == "" || Email_user == "" || Password_user == "" {
+		fmt.Fprintf(w, "Не все данные заполнены")
+	} else {
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	search, err := db.Query(fmt.Sprintf("SELECT login, email FROM user WHERE login='%s' AND email='%s'", Login_user, Email_user))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user User
+	for search.Next() {
+		err = search.Scan(&user.Login, &user.Email)
+		if err != nil {
+			panic(err)
+		}
+	}
+	
+	if Login_user == user.Login || Email_user == user.Email {
+				fmt.Fprintf(w, "Пользователь с таким логином или почтой уже зарегистрирован")
+	} else {
+		insert, err := db.Query(fmt.Sprintf("INSERT INTO user (name, surname, login, email, password) VALUES('%s', '%s', '%s', '%s', '%s')", Name_user, Surname_user, Login_user, Email_user, Password_user))
+		if err != nil {
+		panic(err)
+		}
+		defer insert.Close()
+		http.Redirect(w, r, "/admin", http.StatusSeeOther)
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	fmt.Println("Server is listing...")
+}
+}
+
+func update(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/admin/update.html")
+	if err != nil {
+		panic(err)
+	}
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	rows, err := db.Query("SELECT * FROM user WHERE id!=0 ORDER BY id")
+    if err != nil {
+        panic(err)
+    }
+    defer rows.Close()
+
+	viv_user = []User{}
+	
+	for rows.Next(){
+        var p = User{}
+        err := rows.Scan(&p.Id, &p.User_name, &p.User_surname, &p.Login, &p.Email, &p.Password)
+        if err != nil{
+            fmt.Println(err)
+            continue
+        }
+        viv_user = append(viv_user, p)
+    }
+
+	// fmt.Println(viv_user)
+	t.ExecuteTemplate(w, "update", viv_user)
+}
+
+func funUpdate(w http.ResponseWriter, r *http.Request) {
+	Input = r.FormValue("update_input")
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	search, err := db.Query(fmt.Sprintf("SELECT id, login FROM user WHERE login='%s' AND id!=0", Input))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user Block_user
+	for search.Next() {
+		err = search.Scan(&user.Id, &user.Login)
+		if err != nil {
+			panic(err)
+		} 
+	}
+
+	UpdateUserName = user.Login
+	http.Redirect(w, r, "/update_user", http.StatusSeeOther)
+}
+
+func update_user(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/admin/update_user.html")
+	if err != nil {
+		panic(err)
+	}
+	
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	rows, err := db.Query(fmt.Sprintf("SELECT name, surname, login, email, password FROM user WHERE login='%s' AND id!=0 LIMIT 1", UpdateUserName))
+    if err != nil {
+        panic(err)
+    }
+    defer rows.Close()
+
+	viv_user = []User{}
+	
+	for rows.Next(){
+        var p = User{}
+        err := rows.Scan(&p.User_name, &p.User_surname, &p.Login, &p.Email, &p.Password)
+        if err != nil{
+            fmt.Println(err)
+            continue
+        }
+        viv_user = append(viv_user, p)
+    }
+	t.ExecuteTemplate(w, "update_user", viv_user)
+}
+
+func funUpdateUser(w http.ResponseWriter, r *http.Request) {
+	
+	Name_user := r.FormValue("name_user_update")
+	Surname_user := r.FormValue("surname_user_update")
+	Login_user := r.FormValue("login_user_update")
+	Email_user := r.FormValue("email_user_update")
+	Password_user := r.FormValue("password_user_update")
+
+	if Name_user == "" || Surname_user == "" || Login_user == "" || Email_user == "" || Password_user == "" {
+		fmt.Fprintf(w, "Не все данные заполнены")
+	} else {
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	search, err := db.Query(fmt.Sprintf("SELECT login, email FROM user WHERE login='%s' AND email='%s' LIMIT 1", Login_user, Email_user))
+	if err != nil {
+		panic(err)
+	}
+	defer search.Close()
+
+	var user User
+	for search.Next() {
+		err = search.Scan(&user.Login, &user.Email)
+		if err != nil {
+			panic(err)
+		}
+	}
+	
+		insert, err := db.Query(fmt.Sprintf("UPDATE user SET name='%s', surname='%s', login='%s', email='%s', password='%s' WHERE id!=0 AND login='%s' LIMIT 1", Name_user, Surname_user, Login_user, Email_user, Password_user, UpdateUserName))
+		if err != nil {
+		panic(err)
+		}
+		defer insert.Close()
+		http.Redirect(w, r, "/admin", http.StatusSeeOther)
+	
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	fmt.Println("Server is listing...")
+}
+}
+
+func recovery(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/recovery.html")
+	if err != nil {
+		panic(err)
+	}
+	t.ExecuteTemplate(w, "recovery", nil)
+}
+
+func recovery_now(w http.ResponseWriter, r *http.Request) {
+	Rec_ac = r.FormValue("rec_ac")
+
+	if Rec_ac == "" {
+		fmt.Fprintf(w, "Не все данные заполнены")
+	} else {
+		db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
+		
+		search, err := db.Query(fmt.Sprintf("SELECT login, email, password FROM user WHERE login='%s' OR email='%s'", Rec_ac, Rec_ac))
+		if err != nil {
+			panic(err)
+		}
+		defer search.Close()
+		
+		for search.Next() {
+			err = search.Scan(&user.Login, &user.Email, &user.Pass)
+			if err != nil {
+				panic(err)
+			}
+		}
+		
+		if Rec_ac == user.Login || Rec_ac == user.Email {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			sendPassword()
+			} else {
+				fmt.Println("Пользователь с таким адресом почты не зарегистрировался")
+		}
+	}
+
+	fmt.Println("Server is listing...")
+}
+
+func sendPassword() {
+	mail := gomail.NewMessage()
+	mail.SetHeader("From", "faridunjalolov1@gmail.com")
+	mail.SetHeader("To", user.Email)
+	mail.SetHeader("Subject", "Пароль для входа")
+	mail.SetBody("text/html", "<html><body><b>Ваш логин:</b> " + user.Login + "<br><b>Ваш пароль:</b> " + user.Pass + "</body></html>")
+	a := gomail.NewDialer("smtp.gmail.com",587,"faridunjalolov1@gmail.com","farn2212")
+	if err := a.DialAndSend(mail); err != nil {
+		fmt.Println()
+		panic(err)
+	}
+}
+
+func save_excel(w http.ResponseWriter, r *http.Request) {
+	// time_now = time.Now()
+	// fmt.Println(time_now.Format(time.RFC1123))
+	rand.Seed(time.Now().UTC().UnixNano())
+	randNum = rand.Intn(9999 - 1000)
+
+	E = strconv.Itoa(randNum)
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	rows, err := db.Query("SELECT * FROM user WHERE id != 0 ORDER BY id")
+    if err != nil {
+        panic(err)
+    }
+    defer rows.Close()
+
+	
+	// f, err := excelize.OpenFile("templates/excel/abc.xlsx")
+    // if err != nil {
+    //     fmt.Println(err)
+    //     return
+    // }
+    // defer func() {
+	// 	    // Close the spreadsheet.
+    //     if err := f.Close(); err != nil {
+	// 	        fmt.Println(err)
+    //     }
+    // }()
+	f := excelize.NewFile()
+	f.SetCellValue("Sheet1", "A1", "ID")
+	f.SetCellValue("Sheet1", "B1", "Name")
+	f.SetCellValue("Sheet1", "C1", "Surname")
+	f.SetCellValue("Sheet1", "D1", "Login")
+	f.SetCellValue("Sheet1", "E1", "Email")
+	f.SetCellValue("Sheet1", "F1", "Password")
+
+	for rows.Next(){
+		var p = User{}
+			num += 1
+			sNum = strconv.Itoa(num)
+		err := rows.Scan(&p.Id, &p.User_name, &p.User_surname, &p.Login, &p.Email, &p.Password)
+		if err != nil{
+				fmt.Println(err)
+				continue
+		}
+		f.SetCellValue("Sheet1", "A" + sNum, p.Id)
+		f.SetCellValue("Sheet1", "B" + sNum, p.User_name)
+		f.SetCellValue("Sheet1", "C" + sNum, p.User_surname)
+		f.SetCellValue("Sheet1", "D" + sNum, p.Login)
+		f.SetCellValue("Sheet1", "E" + sNum, p.Email)
+		f.SetCellValue("Sheet1", "F" + sNum, p.Password)
+    }
+	if err := f.SaveAs("templates/excel/" + E + ".xlsx"); err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Отчет сохранен")
+	// func (){
+	// 	mail := gomail.NewMessage()
+	// 	mail.SetHeader("From", "faridunjalolov1@gmail.com")
+	// 	mail.SetHeader("To", "faridunjalolov0@gmail.com")
+	// 	mail.SetHeader("Subject", "Отчёт Excel")
+	// 	mail.SetBody("text/html", "<html><body>" + user.Login + "<br><b>Ваш пароль:</b> " + user.Pass + "</body></html>")
+	// 	a := gomail.NewDialer("smtp.gmail.com",587,"faridunjalolov1@gmail.com","farn2212")
+	// 	if err := a.DialAndSend(mail); err != nil {
+	// 		fmt.Println()
+	// 		panic(err)
+	// 	}
+	// }()
+
+	http.Redirect(w, r, "/down_excel", http.StatusSeeOther)
+}
+
+func down_excel(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/admin/down_excel.html")
+	if err != nil {
+		panic(err)
+	}
+	E = strconv.Itoa(randNum)
+	t.ExecuteTemplate(w, "down_excel", struct{E string}{E: E})
+}
+
+func main_site(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/main_site.html")
+	if err != nil {
+		panic(err)
+	}
+	db, err := sql.Open("mysql", "root:root@tcp(192.168.25.102:3306)/golang")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	rows, err := db.Query("SELECT name FROM golang.active_user")
+    if err != nil {
+        panic(err)
+    }
+    defer rows.Close()
+
+	active_user = []Active_user{}
+	
+	for rows.Next(){
+        var p = Active_user{}
+        err := rows.Scan(&p.Name)
+        if err != nil{
+            fmt.Println(err)
+            continue
+        }
+        active_user = append(active_user, p)
+    }
+
+	fmt.Println(active_user)
+	t.ExecuteTemplate(w, "main_site", active_user)
+}
+
+func handleFunc() {
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	http.Handle("/templates/", http.StripPrefix("/templates/",  http.FileServer(http.Dir("./templates/"))))
+	http.HandleFunc("/", index)
+	http.HandleFunc("/create", create)
+	http.HandleFunc("/save_article", save_create)
+	http.HandleFunc("/verification", verification)
+	http.HandleFunc("/save_ver", save_ver)
+	http.HandleFunc("/login", login)
+	http.HandleFunc("/login_now", login_now)
+	http.HandleFunc("/admin", admin)
+	http.HandleFunc("/block_user", block_user)
+	http.HandleFunc("/funBlock", funBlock)
+	http.HandleFunc("/recovery_user", recovery_user)
+	http.HandleFunc("/funRecovery", funRecovery)
+	http.HandleFunc("/delete_user", delete_user)
+	http.HandleFunc("/funDelete", funDelete)
+	http.HandleFunc("/insert_user", insert_user)
+	http.HandleFunc("/funInsert", funInsert)
+	http.HandleFunc("/update", update)
+	http.HandleFunc("/funUpdate", funUpdate)
+	http.HandleFunc("/update_user", update_user)
+	http.HandleFunc("/funUpdateUser", funUpdateUser)
+	http.HandleFunc("/recovery", recovery)
+	http.HandleFunc("/recovery_now", recovery_now)
+	http.HandleFunc("/save_excel", save_excel)
+	http.HandleFunc("/down_excel", down_excel)
+	http.HandleFunc("/main_site", main_site)
+	http.ListenAndServe(":3306", nil)
+}
+
+func main() {
+	handleFunc()
+}
